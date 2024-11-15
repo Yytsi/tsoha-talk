@@ -5,3 +5,19 @@
 </form>
 
 <h3>Select one of the forums and engage in talk!</h3>
+
+<h4>Create your own forum?</h4>
+<form action="/create_forum" method="post">
+  <div>
+    <label>Forum name:</label>
+    <input type="text" name="forum_name">
+  </div>
+  <button type="submit">Create forum</button>
+</form>
+
+<h4>Forums:</h4>
+<ul>
+  {% for forum in forums %}
+    <li><a href="/forum/{{forum.id}}">{{forum.name}}</a></li>
+  {% endfor %}
+</ul>
