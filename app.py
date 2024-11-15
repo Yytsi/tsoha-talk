@@ -45,6 +45,23 @@ def create_forum():
         return render_template("error.html", message="Failed to create forum.")
     return redirect("/")
 
+@app.route("/create_thread", methods=["POST"])
+def create_thread():
+    forum_id = request.form["forum_id"]
+    thread_title = request.form["thread_title"]
+    first_message = request.form["first_message"]
+
+    if not thread_title or len(thread_title) > 40 or not first_message:
+        return render_template("error.html", message="Thread title too long or empty, or it might be taken.")
+    try:
+        db.session.execute(text("INSERT INTO threads (title, forum_id, creator_id) VALUES (:title, :forum_id, :creator_id)"), {"title": thread_title, "forum_id": forum_id, "creator_id": session["user_id"]})
+        db.session.execute(text("INSERT INTO messages (content, thread_id, posted_by) VALUES (:content, (SELECT id FROM threads WHERE title = :title), :posted_by)"), {"content": first_message, "title": thread_title, "posted_by": session["user_id"]})
+        db.session.commit()
+    except Exception as e:
+        with open("error_log.txt", "a") as log_file:
+            log_file.write(f"Failed to create thread {thread_title}: {e}\n")
+        return render_template("error.html", message="Failed to create thread.")
+    return redirect(f"/forum/{forum_id}")
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -98,4 +115,7 @@ def forum(forum_id):
     if forum is None:
         return render_template("error.html", message="Forum not found. Are you sure it exists?")
     
-    return render_template("forum.html", forum_name=forum[1])
+    # get all threads for forum
+    threads = db.session.execute(text("SELECT * FROM threads WHERE forum_id = :forum_id"), {"forum_id": forum_id}).fetchall()
+    print(threads)
+    return render_template("forum.html", forum_name=forum[1], forum_id=forum_id, threads=threads)

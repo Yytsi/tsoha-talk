@@ -14,7 +14,7 @@ CREATE TABLE forums (
 
 CREATE TABLE threads (
     id SERIAL PRIMARY KEY,
-    title VARCHAR(50) NOT NULL,
+    title VARCHAR(50) NOT NULL UNIQUE,
     forum_id INTEGER REFERENCES forums(id) ON DELETE CASCADE,
     creator_id INTEGER REFERENCES users(id) ON DELETE CASCADE
 );
