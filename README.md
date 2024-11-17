@@ -15,7 +15,7 @@ Tässä tarkemmin ominaisuudet (otettu materiaalista):
 - Ylläpitäjä voi luoda salaisen foorumin ja määrittää, keillä käyttäjillä on pääsy alueelle. ⌛
 
 
-- Tässä ohjeet käynnistämiseen (tarvitset Pythonin).
+Tässä ohjeet käynnistämiseen (tarvitset Pythonin).
 
 1. `source env/bin/activate`
 2. `pip install -r requirements.txt`
