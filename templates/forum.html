@@ -10,10 +10,12 @@
 <form action="/create_thread" method="post">
   <div>
     <label>Thread title:</label>
+    <br>
     <input type="text" name="thread_title">
   </div>
   <div>
     <label>Thread first message:</label>
+    <br>
     <textarea name="first_message"></textarea>
   </div>
   <input type="hidden" name="forum_id" value="{{ forum_id }}">
@@ -25,8 +27,10 @@
 
 {% for thread in threads %}
   <div>
-    <a href="/thread/{{ thread.id }}">{{ thread.title }}</a>
+    <a href="/thread/{{ thread.id }}" style="color:green; font-size: 25" >{{ thread.title }}</a>
   </div>
 {% endfor %}
 
+<br>
+<br>
 <a href="/">Back to front page</a>

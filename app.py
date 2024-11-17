@@ -119,3 +119,38 @@ def forum(forum_id):
     threads = db.session.execute(text("SELECT * FROM threads WHERE forum_id = :forum_id"), {"forum_id": forum_id}).fetchall()
     print(threads)
     return render_template("forum.html", forum_name=forum[1], forum_id=forum_id, threads=threads)
+
+
+@app.route("/thread/<int:thread_id>", methods=["GET"])
+def thread(thread_id):
+    thread = db.session.execute(text("SELECT * FROM threads WHERE id = :id"), {"id": thread_id}).fetchone()
+    if thread is None:
+        return render_template("error.html", message="Thread not found. Are you sure it exists?")
+    
+    # get all messages for thread, but also get the username of the poster, because id is not very informative
+    raw_messages = db.session.execute(text("SELECT * FROM messages WHERE thread_id = :id"), {"id": thread_id}).mappings().all()
+    messages_with_usernames = []
+
+    for message in raw_messages:
+        user = db.session.execute(text("SELECT username FROM users WHERE id = :id"), {"id": message["posted_by"]}).mappings().first()
+        if user:
+            messages_with_usernames.append({**message, "username": user["username"]})
+        else:
+            messages_with_usernames.append({**message, "username": "Unknown"})
+
+    return render_template("thread.html", thread_id=thread_id, thread_title=thread[1], messages=messages_with_usernames)
+
+@app.route("/post_message", methods=["POST"])
+def post_message():
+    thread_id = request.form["thread_id"]
+    message = request.form["message"]
+    if not message:
+        return render_template("error.html", message="Message cannot be empty.")
+    try:
+        db.session.execute(text("INSERT INTO messages (content, thread_id, posted_by) VALUES (:content, :thread_id, :posted_by)"), {"content": message, "thread_id": thread_id, "posted_by": session["user_id"]})
+        db.session.commit()
+    except Exception as e:
+        with open("error_log.txt", "a") as log_file:
+            log_file.write(f"Failed to post message to thread {thread_id}: {e}\n")
+        return render_template("error.html", message="Failed to post message.")
+    return redirect(f"/thread/{thread_id}")

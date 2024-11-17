@@ -1,0 +1,30 @@
+<h1>Talk & talk</h1>
+
+<form action="/logout" method="post">
+  logged in as {{username}} <button type="submit">Logout</button>
+</form>
+
+<h2>Thread {{thread_title}}</h2>
+
+<h3>Messages</h3>
+
+{% for message in messages %}
+  <div>
+    <strong>{{ message.username }}</strong> said: {{ message.content }}
+  </div>
+{% endfor %}
+
+<h3>Post a message</h3>
+<form action="/post_message" method="post">
+  <div>
+    <label>Message:</label>
+    <br>
+    <textarea name="message"></textarea>
+  </div>
+  <br>
+  <input type="hidden" name="thread_id" value="{{ thread_id }}">
+<button type="submit">Post message</button>
+</form>
+
+<br>
+<a href="/">Back to front page</a>
