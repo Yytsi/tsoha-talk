@@ -117,7 +117,6 @@ def forum(forum_id):
     
     # get all threads for forum
     threads = db.session.execute(text("SELECT * FROM threads WHERE forum_id = :forum_id"), {"forum_id": forum_id}).fetchall()
-    print(threads)
     return render_template("forum.html", forum_name=forum[1], forum_id=forum_id, threads=threads)
 
 
