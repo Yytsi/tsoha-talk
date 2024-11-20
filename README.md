@@ -17,8 +17,8 @@ Tässä tarkemmin ominaisuudet (otettu materiaalista):
 
 Tässä ohjeet käynnistämiseen (tarvitset Pythonin).
 
-1. `source env/bin/activate`
-2. `pip install -r requirements.txt`
+1. `pip install -r requirements.txt`
+2. `source env/bin/activate`
 3. Aseta .env tiedostoon 2 riviä, alla olevan kuvan mukaisesti. Vaihda secret key  ja tietokannan osoite sopiviksi.
 4. Suorita `flask run` projektin juuressa.
 5. Avaa ohjelma flaskin kertomasta osoitteesta.
