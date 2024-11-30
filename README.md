@@ -6,7 +6,7 @@ Pidän kurssisivustolla esitetystä keskustelusovellusideasta: "Sovelluksessa n�
 Tässä tarkemmin ominaisuudet (otettu materiaalista):
 
 - Käyttäjä voi kirjautua sisään ja ulos sekä luoda uuden tunnuksen. ✅
-- Käyttäjä näkee sovelluksen etusivulla listan foorumeista sekä jokaisen foorumin sisältämän ketjun viestien määrän ja viimeksi lähetetyn viestin ajankohdan. ⌛
+- Käyttäjä näkee sovelluksen etusivulla listan foorumeista sekä jokaisen foorumin sisältämän ketjun viestien määrän ja viimeksi lähetetyn viestin ajankohdan. ✅
 - Käyttäjä voi luoda foorumiin uuden ketjun antamalla ketjun otsikon ja aloitusviestin sisällön. ✅
 - Käyttäjä voi kirjoittaa uuden viestin olemassa olevaan ketjuun. ✅
 - Käyttäjä voi muokata luomansa ketjun otsikkoa sekä lähettämänsä viestin sisältöä. Käyttäjä voi myös poistaa ketjun tai viestin. ⌛
