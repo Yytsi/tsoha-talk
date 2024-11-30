@@ -1,4 +1,20 @@
+<!-- thread.html -->
+
+<head>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
 <h1>Talk & talk</h1>
+
+{% with notifications = get_flashed_messages() %}
+  {% if notifications %}
+    {% for message in notifications %}
+      <div style="color: red; font-size: 20px">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
 
 <form action="/logout" method="post">
   logged in as {{username}} <button type="submit">Logout</button>

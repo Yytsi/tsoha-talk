@@ -1,6 +1,6 @@
 from sqlalchemy.sql import text
 from flask import Flask
-from flask import redirect, render_template, request, session
+from flask import redirect, render_template, request, session, flash, url_for
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from os import getenv
@@ -27,7 +27,41 @@ def index():
     # display all forums visible to this user
     # i.e. all forums that are public, or that the user has access to
 
-    forums = db.session.execute(text("SELECT * FROM forums")).fetchall()
+    forums_raw = db.session.execute(text("SELECT * FROM forums")).mappings().all()
+    forums = [dict(forum) for forum in forums_raw]
+
+    # Populate forums with last_msg and sum of messages
+    for forum in forums:
+        last_msg = db.session.execute(text("""
+            SELECT content FROM messages 
+            WHERE thread_id = (
+                SELECT id FROM threads 
+                WHERE forum_id = :forum_id 
+                ORDER BY id DESC 
+                LIMIT 1
+            ) 
+            ORDER BY id DESC 
+            LIMIT 1
+        """), {"forum_id": forum["id"]}).fetchone()
+
+        if last_msg:
+            forum["last_msg"] = last_msg[0]
+        else:
+            forum["last_msg"] = "No messages yet"
+
+        message_count = db.session.execute(text("""
+            SELECT COUNT(*) FROM messages 
+            WHERE thread_id IN (
+                SELECT id FROM threads 
+                WHERE forum_id = :forum_id
+            )
+        """), {"forum_id": forum["id"]}).fetchone()
+
+        forum["message_count"] = message_count[0]
+
+        print(f"Message count for forum {forum['name']}: {message_count[0]}")
+        print(f"Last message for forum {forum['name']}: {forum['last_msg']}")
+    
     
     return render_template("index.html", username=user[0], forums=(forums or []))
 
@@ -35,7 +69,8 @@ def index():
 def create_forum():
     forum_name = request.form["forum_name"]
     if not forum_name or len(forum_name) > 40:
-        return render_template("error.html", message="Forum name too long or empty.")
+        flash("Forum name too long or empty.", "error")
+        return redirect(url_for('index'))
     try:
         db.session.execute(text("INSERT INTO forums (name) VALUES (:name)"), {"name": forum_name})
         db.session.commit()
@@ -51,8 +86,12 @@ def create_thread():
     thread_title = request.form["thread_title"]
     first_message = request.form["first_message"]
 
-    if not thread_title or len(thread_title) > 40 or not first_message:
-        return render_template("error.html", message="Thread title too long or empty, or it might be taken.")
+    if not thread_title or len(thread_title) > 40:
+        flash("Thread title too long, empty, or it might be taken.", "error")
+        return redirect(f"/forum/{forum_id}")
+    if not first_message:
+        flash("First message cannot be empty.", "error")
+        return redirect(f"/forum/{forum_id}")
     try:
         db.session.execute(text("INSERT INTO threads (title, forum_id, creator_id) VALUES (:title, :forum_id, :creator_id)"), {"title": thread_title, "forum_id": forum_id, "creator_id": session["user_id"]})
         db.session.execute(text("INSERT INTO messages (content, thread_id, posted_by) VALUES (:content, (SELECT id FROM threads WHERE title = :title), :posted_by)"), {"content": first_message, "title": thread_title, "posted_by": session["user_id"]})
@@ -71,11 +110,13 @@ def login():
         username = request.form["username"]
         user = db.session.execute(text("SELECT id FROM users WHERE username = :username"), {"username": username}).fetchone()
         if user is None:
-            return render_template("error.html", message="No such user found")
+            flash("No such user found", "error")
+            return redirect(url_for("login"))
         password = request.form["password"]
         password_hash = db.session.execute(text("SELECT password FROM users WHERE username = :username"), {"username": username}).fetchone()[0]
         if not check_password_hash(password_hash, password):
-            return render_template("error.html", message="Incorrect password")
+            flash("Incorrect password", "error")
+            return redirect(url_for("login"))
         session["user_id"] = user[0]
         return redirect("/")
 
@@ -96,17 +137,19 @@ def register():
         password = request.form["password"]
 
         if not username or not password or len(password) < 6 or len(password) > 40 or len(username) < 5 or len(username) > 20:
-            return render_template("error.html", message="Invalid input: Check username and password requirements.")
+            flash("Invalid input: Check username and password requirements.", "error")
+            return redirect(url_for("register"))
 
         password_hash = generate_password_hash(password)
         try:
             db.session.execute(text("INSERT INTO users (username, password) VALUES (:username, :password)"), {"username": username, "password": password_hash})
             db.session.commit()
         except Exception as e:
+            flash("Registration failed. Username might be taken, or another error occurred. ", "error")
             with open("error_log.txt", "a") as log_file:
-                log_file.write(f"Failed to register {username}: {e}\n")
-            return render_template("error.html", message="Registration failed. Username might be taken, or another error occurred.")
-
+                log_file.write(f"Failed to register user {username}: {e}\n")
+            return redirect(url_for("register"))
+        
         return redirect("/login")
 
 @app.route("/forum/<int:forum_id>", methods=["GET"])
@@ -144,7 +187,8 @@ def post_message():
     thread_id = request.form["thread_id"]
     message = request.form["message"]
     if not message:
-        return render_template("error.html", message="Message cannot be empty.")
+        flash("Message cannot be empty", "error")
+        return redirect(f"/thread/{thread_id}")
     try:
         db.session.execute(text("INSERT INTO messages (content, thread_id, posted_by) VALUES (:content, :thread_id, :posted_by)"), {"content": message, "thread_id": thread_id, "posted_by": session["user_id"]})
         db.session.commit()

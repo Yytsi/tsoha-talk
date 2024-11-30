@@ -1,8 +1,25 @@
+<!-- index.html -->
+
+<head>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
 <h1>Talk & talk</h1>
 
 <form action="/logout" method="post">
   logged in as {{username}} <button type="submit">Logout</button>
 </form>
+
+{% with notifications = get_flashed_messages() %}
+  {% if notifications %}
+    {% for message in notifications %}
+      <div style="color: red; font-size: 20px">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
 
 <h3>Select one of the forums and engage in talk!</h3>
 
@@ -20,6 +37,10 @@
 <h4>Forums:</h4>
 <ul>
   {% for forum in forums %}
-    <li><a href="/forum/{{forum.id}}">{{forum.name}}</a></li>
+    <li>
+      <a href="/forum/{{forum.id}}">{{forum.name}}</a>
+      <p>Last message: {{ forum.last_msg }}</p>
+      <p>Total message count: {{ forum.message_count }}</p>
+    </li>
   {% endfor %}
 </ul>
