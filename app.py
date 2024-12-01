@@ -77,6 +77,7 @@ def create_forum():
         db.session.execute(text("INSERT INTO forums (name) VALUES (:name)"), {"name": forum_name})
         db.session.commit()
     except Exception as e:
+        db.session.rollback()
         with open("error_log.txt", "a") as log_file:
             log_file.write(f"Failed to create forum {forum_name}: {e}\n")
         flash("Failed to create forum.", "error")
@@ -100,10 +101,11 @@ def create_thread():
         db.session.execute(text("INSERT INTO messages (content, thread_id, posted_by) VALUES (:content, (SELECT id FROM threads WHERE title = :title), :posted_by)"), {"content": first_message, "title": thread_title, "posted_by": session["user_id"]})
         db.session.commit()
     except Exception as e:
+        db.session.rollback()
         with open("error_log.txt", "a") as log_file:
             log_file.write(f"Failed to create thread {thread_title}: {e}\n")
         flash("Failed to create thread.", "error")
-        return redirect(url_for('index'))
+        return redirect(request.referrer or url_for('index'))
     return redirect(f"/forum/{forum_id}")
 
 @app.route("/login", methods=["GET", "POST"])
@@ -129,6 +131,7 @@ def logout():
     try:
         session.pop("user_id", None)
     except Exception as e:
+        db.session.rollback()
         with open("error_log.txt", "a") as log_file:
             log_file.write(f"Failed to log out user: {e}\n")
         flash("Failed to log out", "error")
@@ -151,6 +154,7 @@ def register():
             db.session.execute(text("INSERT INTO users (username, password) VALUES (:username, :password)"), {"username": username, "password": password_hash})
             db.session.commit()
         except Exception as e:
+            db.session.rollback()
             flash("Registration failed. Username might be taken, or another error occurred. ", "error")
             with open("error_log.txt", "a") as log_file:
                 log_file.write(f"Failed to register user {username}: {e}\n")
@@ -158,16 +162,16 @@ def register():
         
         return redirect("/login")
 
-def check_user_is_permitted(creator_id):
-    print(f"Checking if user {session.get('user_id')} is permitted to modify thread created by {creator_id}")
-    return session.get("user_id") is not None and session["user_id"] == creator_id
+def check_user_is_permitted(needed_id):
+    print(f"Checking if user {session.get('user_id')} is permitted to modify thread created by {needed_id}")
+    return session.get("user_id") is not None and session["user_id"] == needed_id
 
 @app.route("/forum/<int:forum_id>", methods=["GET"])
 def forum_func(forum_id):
     forum = db.session.execute(text("SELECT * FROM forums WHERE id = :id"), {"id": forum_id}).fetchone()
     if forum is None:
         flash("Forum not found. Are you sure it exists?", "error")
-        return redirect(url_for("index"))
+        return redirect(request.referrer or url_for('index'))
 
     # Get all threads for forum
     threads = db.session.execute(text("SELECT * FROM threads WHERE forum_id = :forum_id"), {"forum_id": forum_id}).mappings().all()
@@ -186,7 +190,7 @@ def thread_func(thread_id):
     thread = db.session.execute(text("SELECT * FROM threads WHERE id = :id"), {"id": thread_id}).fetchone()
     if thread is None:
         flash("Thread not found. Are you sure it exists?", "error")
-        return redirect(url_for("index"))
+        return redirect(request.referrer or url_for('index'))
     
     raw_messages = db.session.execute(text("SELECT * FROM messages WHERE thread_id = :id"), {"id": thread_id}).mappings().all()
     messages_with_usernames = []
@@ -212,35 +216,37 @@ def post_message():
         db.session.execute(text("INSERT INTO messages (content, thread_id, posted_by) VALUES (:content, :thread_id, :posted_by)"), {"content": message, "thread_id": thread_id, "posted_by": session["user_id"]})
         db.session.commit()
     except Exception as e:
+        db.session.rollback()
         with open("error_log.txt", "a") as log_file:
             log_file.write(f"Failed to post message to thread {thread_id}: {e}\n")
         flash("Failed to post message.", "error")
-        return redirect(f"/thread/{thread_id}")
-    return redirect(f"/thread/{thread_id}")
+        return redirect(request.referrer or url_for('index'))
+    return redirect(request.referrer or url_for('index'))
 
 @app.route("/edit_thread/<int:thread_id>", methods=["POST"])
 def edit_thread(thread_id):
     onwer_of_thread = db.session.execute(text("SELECT creator_id FROM threads WHERE id = :id"), {"id": thread_id}).fetchone()[0]
     if not check_user_is_permitted(onwer_of_thread):
         flash("You are not permitted to edit this thread.", "error")
-        return redirect(f"/thread/{thread_id}")
+        return redirect(request.referrer or url_for('index'))
 
     new_title = request.form["new_title"]
     if not new_title or len(new_title) > 40:
         flash("Thread title is too long or empty.", "error")
-        return redirect(f"/thread/{thread_id}")
+        return redirect(request.referrer or url_for('index'))
 
     try:
         db.session.execute(text("UPDATE threads SET title = :title WHERE id = :id AND creator_id = :creator_id"), {"title": new_title, "id": thread_id, "creator_id": session["user_id"]})
         db.session.commit()
     except Exception as e:
+        db.session.rollback()
         with open("error_log.txt", "a") as log_file:
             log_file.write(f"Failed to edit thread {thread_id}: {e}\n")
         flash("Failed to edit thread title.", "error")
-        return redirect(f"/thread/{thread_id}")
+        return redirect(request.referrer or url_for('index'))
 
     flash("Thread title updated successfully.", "success")
-    return redirect(f"/thread/{thread_id}")
+    return redirect(request.referrer or url_for('index'))
 
 
 @app.route("/delete_thread/<int:thread_id>", methods=["POST"])
@@ -250,12 +256,12 @@ def delete_thread(thread_id):
         onwer_of_thread = db.session.execute(text("SELECT creator_id FROM threads WHERE id = :id"), {"id": thread_id}).fetchone()[0]
         if not check_user_is_permitted(onwer_of_thread):
             flash("You are not permitted to delete this thread.", "error")
-            return redirect(url_for("index"))
+            return redirect(request.referrer or url_for('index'))
         
         thread = db.session.execute(text("SELECT creator_id FROM threads WHERE id = :id"), {"id": thread_id}).mappings().fetchone()
         if not thread or thread['creator_id'] != session["user_id"]:
             flash("You do not have permission to delete this thread.", "error")
-            return redirect(url_for("index"))
+            return redirect(request.referrer or url_for('index'))
         
         # Delete messages first
         db.session.execute(text("DELETE FROM messages WHERE thread_id = :id"), {"id": thread_id})
@@ -263,11 +269,55 @@ def delete_thread(thread_id):
         db.session.execute(text("DELETE FROM threads WHERE id = :id"), {"id": thread_id})
         db.session.commit()
     except Exception as e:
+        db.session.rollback()
         with open("error_log.txt", "a") as log_file:
             log_file.write(f"Failed to delete thread {thread_id}: {e}\n")
         flash("Failed to delete thread.", "error")
-        return redirect(f"/thread/{thread_id}")
+        return redirect(request.referrer or url_for('index'))
 
     flash("Thread deleted successfully.", "success")
-    return redirect(url_for("index"))
-    # TODO: redirect back to the forum where the thread was deleted from
+    return redirect(request.referrer or url_for('index'))
+
+@app.route("/delete_message/<int:message_id>", methods=["POST"])
+def delete_message(message_id):
+    message = db.session.execute(text("SELECT posted_by FROM messages WHERE id = :id"), {"id": message_id}).mappings().fetchone()
+    if not message or not check_user_is_permitted(message["posted_by"]):
+        flash("You do not have permission to delete this message.", "error")
+        return redirect(request.referrer or url_for('index'))
+
+    try:
+        db.session.execute(text("DELETE FROM messages WHERE id = :id"), {"id": message_id})
+        db.session.commit()
+        flash("Message deleted successfully.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash("Failed to delete message.", "error")
+        print(f"Error deleting message {message_id}: {e}")
+
+    return redirect(request.referrer or url_for('index'))
+
+
+@app.route("/edit_message/<int:message_id>", methods=["POST"])
+def edit_message(message_id):
+    new_content = request.form.get("new_content", "").strip()
+    if not new_content:
+        flash("Message content cannot be empty.", "error")
+        return redirect(request.referrer or url_for('index'))
+    
+    message = db.session.execute(text("SELECT posted_by FROM messages WHERE id = :id"), {"id": message_id}).mappings().fetchone()
+
+    # Check if the user is the poster of the message
+    if not message or not check_user_is_permitted(message["posted_by"]):
+        flash("You do not have permission to edit this message.", "error")
+        return redirect(request.referrer or url_for('index'))
+
+    try:
+        db.session.execute(text("UPDATE messages SET content = :content WHERE id = :id"), {"content": new_content, "id": message_id})
+        db.session.commit()
+        flash("Message edited successfully.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash("Failed to edit message.", "error")
+        print(f"Error editing message {message_id}: {e}")
+
+    return redirect(request.referrer or url_for('index'))
