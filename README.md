@@ -17,11 +17,12 @@ Tässä tarkemmin ominaisuudet (otettu materiaalista):
 
 Tässä ohjeet käynnistämiseen (tarvitset Pythonin).
 
-1. `pip install -r requirements.txt`
+1. python3 -m venv env
 2. `source env/bin/activate`
-3. Aseta .env tiedostoon 2 riviä, alla olevan kuvan mukaisesti. Vaihda secret key  ja tietokannan osoite sopiviksi.
-4. Suorita `flask run` projektin juuressa.
-5. Avaa ohjelma flaskin kertomasta osoitteesta.
+3. `pip install -r requirements.txt`
+4. Aseta .env tiedostoon 2 riviä, alla olevan kuvan mukaisesti. Vaihda secret key  ja tietokannan osoite sopiviksi.
+5. Suorita `flask run` projektin juuressa.
+6. Avaa ohjelma flaskin kertomasta osoitteesta.
 
 <img width="657" alt="image" src="https://github.com/user-attachments/assets/0a6a79bd-9497-4c3a-8b20-aceaa6d45fe1">
 
