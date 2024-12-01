@@ -24,11 +24,23 @@
 
 <h3>Messages</h3>
 
-{% for message in messages %}
-  <div>
-    <strong>{{ message.username }}</strong> said: {{ message.content }}
-  </div>
-{% endfor %}
+<div class="messages-container">
+  {% for message in messages %}
+    <div class="message-card">
+      <div class="message-header">
+        <strong class="message-username">{{ message.username }}</strong><span class="said-text"> said:</span>
+      </div>    
+      <p>{{ message.content }}</p>
+      {% if message.posted_by == session['user_id'] %}
+        <form action="/edit_message/{{ message.id }}" method="post" class="message-form">
+          <textarea name="new_content">{{ message.content }}</textarea>
+          <button type="submit">Edit message</button>
+          <button type="submit" formaction="/delete_message/{{ message.id }}" onclick="return confirm('Are you sure you want to delete this message?');" class="delete-button">Delete</button>
+        </form>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>
 
 <h3>Post a message</h3>
 <form action="/post_message" method="post">

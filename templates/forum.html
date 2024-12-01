@@ -10,6 +10,7 @@
   logged in as {{username}} <button type="submit">Logout</button>
 </form>
 
+<!-- TODO: flash categories -->
 {% with notifications = get_flashed_messages() %}
   {% if notifications %}
     {% for message in notifications %}
@@ -45,6 +46,15 @@
 {% for thread in threads %}
   <div class="thread-list">
     <a href="/thread/{{ thread.id }}">{{ thread.title }}</a>
+    {% if thread.has_modify_permissions %}
+      <form action="/edit_thread/{{ thread.id }}" method="post">
+        <input type="text" name="new_title" placeholder="New title" required>
+        <button type="submit">Edit Title</button>
+      </form>
+      <form action="/delete_thread/{{ thread.id }}" method="post" onsubmit="return confirm('Are you sure you want to delete this thread?');">
+        <button type="submit" class="delete_thread">Delete Thread</button>
+      </form>
+    {% endif %}
   </div>
 {% endfor %}
 
