@@ -30,3 +30,7 @@ Tässä ohjeet käynnistämiseen (tarvitset Pythonin).
 ## Välipalautus 2
 
 Sovelluksen perusominaisuuksia on toteutettu, mutta ulkonäkö on karkea. Seuraavaan välipalautukseen mennessä sovelluksella on kauniimpi ulkoasu sekä enemmän toteutettuja ominaisuuksia.
+
+## Välipalautus 3
+
+Sovellus on erinomaisessa kunnossa: suurin osa suunnitelluista toiminnoista on toteuttu ja sovelluksella on mukavampi ulkoasu. Puutteita löytyy, kuten palaaminen takaisin foorumiin viestiketjusta ja toteuttamattomat ylläpitäjätoiminnot, sekä yhden tietokantataulun vaje tavoitemäärästä (4 -> 5). Kaikki koodi on toistaiseksi myös yhdessä tiedostossa. Viimeiseen välipalautukseen mennessä kaikki nämä ovat kunnossa ja sovellus on laajennuskelpoinen.
