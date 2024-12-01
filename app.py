@@ -187,22 +187,31 @@ def forum_func(forum_id):
 
 @app.route("/thread/<int:thread_id>", methods=["GET"])
 def thread_func(thread_id):
-    thread = db.session.execute(text("SELECT * FROM threads WHERE id = :id"), {"id": thread_id}).fetchone()
+    thread = db.session.execute(
+        text("SELECT * FROM threads WHERE id = :id"), 
+        {"id": thread_id}
+    ).mappings().fetchone()
+
     if thread is None:
         flash("Thread not found. Are you sure it exists?", "error")
         return redirect(request.referrer or url_for('index'))
-    
-    raw_messages = db.session.execute(text("SELECT * FROM messages WHERE thread_id = :id"), {"id": thread_id}).mappings().all()
-    messages_with_usernames = []
 
-    for message in raw_messages:
-        user = db.session.execute(text("SELECT username FROM users WHERE id = :id"), {"id": message["posted_by"]}).mappings().first()
-        if user:
-            messages_with_usernames.append({**message, "username": user["username"]})
-        else:
-            messages_with_usernames.append({**message, "username": "Unknown"})
+    raw_messages = db.session.execute(
+        text("SELECT m.*, u.username FROM messages m JOIN users u ON m.posted_by = u.id WHERE m.thread_id = :id"),
+        {"id": thread_id}
+    ).mappings().all()
 
-    return render_template("thread.html", thread_id=thread_id, thread_title=thread[1], messages=messages_with_usernames)
+    search_query = request.args.get('query', '').strip()
+    search_results = []
+    if search_query:
+        # Fetch only search results when there is a query
+        search_results = db.session.execute(
+            text("SELECT m.*, u.username FROM messages m JOIN users u ON m.posted_by = u.id WHERE m.thread_id = :thread_id AND m.content ILIKE :query"),
+            {"thread_id": thread_id, "query": f"%{search_query}%"}
+        ).mappings().all()
+
+    return render_template("thread.html", thread_id=thread_id, thread_title=thread['title'], messages=raw_messages, search_results=search_results, search_query=search_query)
+
 
 @app.route("/post_message", methods=["POST"])
 def post_message():

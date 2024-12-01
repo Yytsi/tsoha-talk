@@ -22,6 +22,24 @@
 
 <h2>Thread {{thread_title}}</h2>
 
+<h3>Search Messages</h3>
+<form action="{{ url_for('thread_func', thread_id=thread_id) }}" method="get">
+  <input type="text" name="query" placeholder="Search messages...">
+  <button type="submit">Search</button>
+</form>
+
+{% if search_query %}
+  <div class="search-results">
+    <h4>The following messages contain the string "{{ search_query }}":</h4>
+    <h3>There are {{ search_query.length }}</h3>
+    <div class="messages-list">
+      {% for message in search_results %}
+        <div>{{ message.username }} said: {{ message.content }}</div>
+      {% endfor %}
+    </div>
+  </div>
+{% endif %}
+
 <h3>Messages</h3>
 
 <div class="messages-container">
