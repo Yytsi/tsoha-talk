@@ -10,10 +10,12 @@ app.config["SQLALCHEMY_DATABASE_URI"] = getenv("DATABASE_URL")
 app.secret_key = getenv("SECRET_KEY")
 db = SQLAlchemy(app)
 
-print(app.secret_key)
-print(app.config["SQLALCHEMY_DATABASE_URI"])
 
-# TODO: samesite cookies?
+app.config.update(
+    SESSION_COOKIE_HTTPONLY = True,
+    SESSION_COOKIE_SECURE = False,      # Since this is a local HTTP server, we don't need to set this to True
+    SESSION_COOKIE_SAMESITE = 'Lax',
+)
 
 # Remember to wrap SQL queries in text()!
 
@@ -42,7 +44,7 @@ def index():
                 ORDER BY id DESC 
                 LIMIT 1
             ) 
-            ORDER BY id DESC 
+            ORDER BY id DESC
             LIMIT 1
         """), {"forum_id": forum["id"]}).fetchone()
 
@@ -65,7 +67,7 @@ def index():
         print(f"Last message for forum {forum['name']}: {forum['last_msg']}")
     
     
-    return render_template("index.html", username=user[0], forums=(forums or []))
+    return render_template("index.html", username=user[0], forums=(forums or []), is_admin=session.get("is_admin") is True)
 
 @app.route("/create_forum", methods=["POST"])
 def create_forum():
@@ -124,6 +126,10 @@ def login():
             flash("Incorrect password", "error")
             return redirect(url_for("login"))
         session["user_id"] = user[0]
+        session["username"] = username
+        # Check admin right for user
+        session["is_admin"] = db.session.execute(text("SELECT is_admin FROM users WHERE id = :id"), {"id": user[0]}).fetchone()[0] == 1
+        print(f"User {username} logged in") 
         return redirect("/")
 
 @app.route("/logout", methods=["POST"])
@@ -163,7 +169,11 @@ def register():
         return redirect("/login")
 
 def check_user_is_permitted(needed_id):
-    print(f"Checking if user {session.get('user_id')} is permitted to modify thread created by {needed_id}")
+    # Check if user is admin and can do anything that requires permissions
+    print(f"Checking if user {session.get('user_id')} is permitted to access {needed_id}")
+    print(f"Is admin: {session.get('is_admin')}")
+    if session.get("is_admin"):
+        return True
     return session.get("user_id") is not None and session["user_id"] == needed_id
 
 @app.route("/forum/<int:forum_id>", methods=["GET"])
@@ -182,7 +192,7 @@ def forum_func(forum_id):
     for thread in threads:
         thread["has_modify_permissions"] = check_user_is_permitted(thread['creator_id'])
 
-    return render_template("forum.html", forum_name=forum[1], forum_id=forum_id, threads=threads)
+    return render_template("forum.html", forum_name=forum[1], forum_id=forum_id, threads=threads, username=session.get("username"))
 
 
 @app.route("/thread/<int:thread_id>", methods=["GET"])
@@ -219,7 +229,6 @@ def post_message():
     message = request.form["message"]
     if not message:
         flash("Message cannot be empty", "error")
-        
         return redirect(url_for("thread_func", thread_id=thread_id))
     try:
         db.session.execute(text("INSERT INTO messages (content, thread_id, posted_by) VALUES (:content, :thread_id, :posted_by)"), {"content": message, "thread_id": thread_id, "posted_by": session["user_id"]})
@@ -229,8 +238,8 @@ def post_message():
         with open("error_log.txt", "a") as log_file:
             log_file.write(f"Failed to post message to thread {thread_id}: {e}\n")
         flash("Failed to post message.", "error")
-        return redirect(request.referrer or url_for('index'))
-    return redirect(request.referrer or url_for('index'))
+        return redirect(url_for("thread_func", thread_id=thread_id))
+    return redirect(url_for("thread_func", thread_id=thread_id))
 
 @app.route("/edit_thread/<int:thread_id>", methods=["POST"])
 def edit_thread(thread_id):
@@ -258,6 +267,27 @@ def edit_thread(thread_id):
     return redirect(request.referrer or url_for('index'))
 
 
+@app.route("/delete_forum/<int:forum_id>", methods=["POST"])
+def delete_forum(forum_id):
+    try:
+        # Check if user has permission to delete this forum
+        if not session.get("is_admin"):
+            flash("You are not permitted to delete this forum.", "error")
+            return redirect(request.referrer or url_for('index'))
+        
+        db.session.execute(text("DELETE FROM forums WHERE id = :id"), {"id": forum_id})
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        with open("error_log.txt", "a") as log_file:
+            log_file.write(f"Failed to delete forum {forum_id}: {e}\n")
+        flash("Failed to delete forum.", "error")
+        return redirect(request.referrer or url_for('index'))
+
+    flash("Forum deleted successfully.", "success")
+    return redirect(request.referrer or url_for('index'))
+
+
 @app.route("/delete_thread/<int:thread_id>", methods=["POST"])
 def delete_thread(thread_id):
     try:
@@ -268,8 +298,9 @@ def delete_thread(thread_id):
             return redirect(request.referrer or url_for('index'))
         
         thread = db.session.execute(text("SELECT creator_id FROM threads WHERE id = :id"), {"id": thread_id}).mappings().fetchone()
-        if not thread or thread['creator_id'] != session["user_id"]:
+        if (not session.get("is_admin")) and (not thread or thread['creator_id'] != session["user_id"]):
             flash("You do not have permission to delete this thread.", "error")
+            print(f"is admin: {session.get('is_admin')}")
             return redirect(request.referrer or url_for('index'))
         
         # Delete messages first
