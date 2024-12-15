@@ -12,7 +12,7 @@ Tässä tarkemmin ominaisuudet (otettu materiaalista):
 - Käyttäjä voi muokata luomansa ketjun otsikkoa sekä lähettämänsä viestin sisältöä. Käyttäjä voi myös poistaa ketjun tai viestin. ✅
 - Käyttäjä voi etsiä kaikki viestit, joiden osana on annettu sana. ✅
 - Ylläpitäjä voi lisätä ja poistaa ketjuja sekä foorumeita. ✅
-- Ylläpitäjä voi luoda salaisen foorumin ja määrittää, keillä käyttäjillä on pääsy alueelle. ⌛
+- ~~Ylläpitäjä voi luoda salaisen foorumin ja määrittää, keillä käyttäjillä on pääsy alueelle.~~
 
 
 Tässä ohjeet käynnistämiseen (tarvitset Pythonin).
