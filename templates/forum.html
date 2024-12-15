@@ -24,6 +24,19 @@
 
 <h2>The {{forum_name}} forum!</h2>
 
+{% if is_admin %}
+<h3>Add members</h3>
+<form action="/secret_forum_add_member" method="post">
+  <div>
+    <label>Username:</label>
+    <br>
+    <input type="text" name="username">
+  </div>
+  <input type="hidden" name="forum_id" value="{{ forum_id }}">
+  <button type="submit" class="add_user">Add user</button>
+</form>
+{% endif %}
+
 <h3>Create a new thread</h3>
 <form action="/create_thread" method="post">
   <div>

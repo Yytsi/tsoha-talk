@@ -34,6 +34,20 @@
   <button type="submit">Create forum</button>
 </form>
 
+{% if is_admin %}
+<h4>Create a secret forum?</h4>
+<form action="/create_secret_forum" method="post">
+  <div>
+    <label>Forum name:</label>
+    <br>
+    <input type="text" name="forum_name">
+  </div>
+  <br>
+  <button type="submit">Create secret forum</button>
+</form>
+{% endif %}
+
+
 <h4>Forums:</h4>
 <ul>
   {% for forum in forums %}

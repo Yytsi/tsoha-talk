@@ -82,6 +82,15 @@ button {
   background-color: #c9302c;
 }
 
+.add_user {
+  background-color: #28a7aa;
+}
+
+.add_user:hover {
+  background-color: #1a7a7c;
+}
+
+
 button:hover {
   background-color: #4cae4c;
 }
