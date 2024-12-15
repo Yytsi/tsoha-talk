@@ -12,7 +12,7 @@ Tässä tarkemmin ominaisuudet (otettu materiaalista):
 - Käyttäjä voi muokata luomansa ketjun otsikkoa sekä lähettämänsä viestin sisältöä. Käyttäjä voi myös poistaa ketjun tai viestin. ✅
 - Käyttäjä voi etsiä kaikki viestit, joiden osana on annettu sana. ✅
 - Ylläpitäjä voi lisätä ja poistaa ketjuja sekä foorumeita. ✅
-- ~~Ylläpitäjä voi luoda salaisen foorumin ja määrittää, keillä käyttäjillä on pääsy alueelle.~~
+- Ylläpitäjä voi luoda salaisen foorumin ja määrittää, keillä käyttäjillä on pääsy alueelle. ✅
 
 
 Tässä ohjeet käynnistämiseen (tarvitset Pythonin).
@@ -34,3 +34,8 @@ Sovelluksen perusominaisuuksia on toteutettu, mutta ulkonäkö on karkea. Seuraa
 ## Välipalautus 3
 
 Sovellus on erinomaisessa kunnossa: suurin osa suunnitelluista toiminnoista on toteuttu ja sovelluksella on mukavampi ulkoasu. Puutteita löytyy, kuten palaaminen takaisin foorumiin viestiketjusta ja toteuttamattomat ylläpitäjätoiminnot, sekä yhden tietokantataulun vaje tavoitemäärästä (4 -> 5). Kaikki koodi on toistaiseksi myös yhdessä tiedostossa. Viimeiseen välipalautukseen mennessä kaikki nämä ovat kunnossa ja sovellus on laajennuskelpoinen.
+
+
+## Loppupalautus
+
+Sovellus on valmis ja kaikki toiminnot ovat toteutettu. Pieniä bugeja saattaa löytyä (esim. jos on viestiketjussa, ei näy kuka on sisäänkirjautunut).
